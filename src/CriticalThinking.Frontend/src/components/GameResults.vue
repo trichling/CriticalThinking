@@ -7,6 +7,11 @@
       </div>
     </div>
 
+    <div class="game-text-section">
+      <h3>Game Text</h3>
+      <div class="game-text" v-html="highlightedText"></div>
+    </div>
+
     <div class="stats-summary">
       <div class="stat-card">
         <div class="stat-number">{{ props.results.stats.correctCount }}</div>
@@ -40,6 +45,8 @@
             v-for="result in correctResults"
             :key="result.fallacyId"
             class="result-item correct"
+            @mouseenter="handleFallacyHover(result.fallacyKey, true)"
+            @mouseleave="handleFallacyHover(result.fallacyKey, false)"
           >
             <div class="fallacy-name">{{ result.fallacyName }}</div>
             <div v-if="result.textReference" class="text-reference">
@@ -70,6 +77,8 @@
             v-for="result in missedResults"
             :key="result.fallacyId"
             class="result-item missed"
+            @mouseenter="handleFallacyHover(result.fallacyKey, true)"
+            @mouseleave="handleFallacyHover(result.fallacyKey, false)"
           >
             <div class="fallacy-name">{{ result.fallacyName }}</div>
             <div v-if="result.textReference" class="text-reference">
@@ -89,12 +98,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { GameSubmitResponse } from '@/types/game'
+import { useGameStore } from '@/stores/gameStore'
 
 const props = defineProps<{
   results: GameSubmitResponse
 }>()
+
+const gameStore = useGameStore()
+const hoveredFallacy = ref<string | null>(null)
 
 defineEmits<{
   playAgain: []
@@ -116,6 +129,38 @@ const formatTime = (seconds: number) => {
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+}
+
+const highlightedText = computed(() => {
+  let text = gameStore.state.gameText
+  
+  if (!text) return ''
+  
+  // Get all fallacies that should be highlighted (correct and missed)
+  const fallaciesWithReferences = [...correctResults.value, ...missedResults.value]
+    .filter(result => result.textReference)
+  
+  // Create highlight spans for each fallacy reference
+  fallaciesWithReferences.forEach(result => {
+    if (result.textReference) {
+      const isHovered = hoveredFallacy.value === result.fallacyKey
+      const highlightClass = result.resultType === 'correct' ? 'highlight-correct' : 'highlight-missed'
+      const activeClass = isHovered ? ' highlight-active' : ''
+      
+      // Escape special regex characters in the text reference
+      const escapedReference = result.textReference.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      
+      // Replace the text reference with a highlighted version
+      const regex = new RegExp(`(${escapedReference})`, 'gi')
+      text = text.replace(regex, `<span class="${highlightClass}${activeClass}" data-fallacy="${result.fallacyKey}">$1</span>`)
+    }
+  })
+  
+  return text
+})
+
+const handleFallacyHover = (fallacyKey: string, isEntering: boolean) => {
+  hoveredFallacy.value = isEntering ? fallacyKey : null
 }
 </script>
 
@@ -259,5 +304,56 @@ const formatTime = (seconds: number) => {
 
 .play-again-button:hover {
   background-color: #0056b3;
+}
+
+.game-text-section {
+  margin-bottom: 2rem;
+}
+
+.game-text-section h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+}
+
+.game-text {
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.highlight-correct {
+  background-color: rgba(40, 167, 69, 0.2);
+  border-radius: 3px;
+  padding: 2px 4px;
+  transition: all 0.3s ease;
+}
+
+.highlight-missed {
+  background-color: rgba(255, 193, 7, 0.3);
+  border-radius: 3px;
+  padding: 2px 4px;
+  transition: all 0.3s ease;
+}
+
+.highlight-active {
+  background-color: rgba(0, 123, 255, 0.4) !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+  font-weight: bold;
+}
+
+.result-item {
+  padding: 1rem;
+  border-radius: 4px;
+  border-left: 4px solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.result-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
