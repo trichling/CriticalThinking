@@ -35,8 +35,6 @@ const gameStore = useGameStore()
 const currentView = ref<'setup' | 'playing' | 'results'>('setup')
 
 function handleGameCompleted() {
-  console.log('Game completed event received')
-  console.log('Game store results:', gameStore.state.results)
   currentView.value = 'results'
 }
 

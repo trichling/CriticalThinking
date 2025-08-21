@@ -6,6 +6,9 @@ public class GameText
 {
     public int Id { get; set; }
     
+    public int TopicId { get; set; }
+    public Topic Topic { get; set; } = null!;
+    
     [MaxLength(200)]
     public string? Title { get; set; }
     

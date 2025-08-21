@@ -100,8 +100,6 @@ defineEmits<{
   playAgain: []
 }>()
 
-console.log('GameResults component received props:', props.results)
-
 const correctResults = computed(() => 
   props.results.results.filter(r => r.resultType === 'correct')
 )

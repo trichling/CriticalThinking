@@ -6,6 +6,9 @@ public class TextBlock
 {
     public int Id { get; set; }
     
+    public int TopicId { get; set; }
+    public Topic Topic { get; set; } = null!;
+    
     public int FallacyId { get; set; }
     public LogicalFallacy Fallacy { get; set; } = null!;
     

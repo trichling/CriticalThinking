@@ -60,10 +60,6 @@ export const useGameStore = defineStore('game', () => {
         completedAt: state.value.endTime.toISOString()
       })
       
-      console.log('Game submission response:', response)
-      console.log('Response type:', typeof response)
-      console.log('Response keys:', Object.keys(response || {}))
-      
       state.value.results = response
       state.value.isPlaying = false
       

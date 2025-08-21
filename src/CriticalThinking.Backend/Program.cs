@@ -37,6 +37,7 @@ builder.AddNpgsqlDbContext<CriticalThinkingContext>(connectionName: "criticalthi
 // Add services
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IScoringService, ScoringService>();
+builder.Services.AddScoped<IGameTextGenerationService, GameTextGenerationService>();
 
 var app = builder.Build();
 
@@ -101,7 +102,7 @@ using (var scope = app.Services.CreateScope())
 static async Task SeedDatabaseAsync(CriticalThinkingContext context)
 {
     // Only seed if no data exists
-    if (await context.LogicalFallacies.AnyAsync())
+    if (await context.LogicalFallacies.AnyAsync() || await context.Topics.AnyAsync())
     {
         return; // Data already exists, skip seeding
     }
@@ -143,126 +144,363 @@ static async Task SeedDatabaseAsync(CriticalThinkingContext context)
     context.LogicalFallacies.AddRange(fallacies);
     await context.SaveChangesAsync();
 
-    // Add game texts
-    var gameTexts = new[]
-    {
-        new GameText 
-        { 
-            Title = "The School Funding Debate", 
-            FullText = "During yesterday's town hall meeting about school funding, local businessman Tom Richardson argued against the proposed education budget increase. \"We can't trust anything Sarah Martinez says about education,\" Richardson declared, \"she doesn't even have children of her own, so what does she know about schools?\" He continued, \"Martinez claims we need more funding, but what she really wants is to waste all our taxpayer money on unnecessary luxuries.\" The crowd murmured approval when Richardson added, \"Everyone in this room who cares about fiscal responsibility opposes this budget increase. You're either with responsible spending or you're against it - there's no middle ground here.\"", 
-            Difficulty = Difficulty.Easy, 
-            TargetFallacyCount = 3 
-        },
-        new GameText 
-        { 
-            Title = "The Organic Food Controversy",
-            FullText = "At the community health fair, wellness blogger Jenny Chen made passionate arguments for organic food. \"Think of your children's future!\" she exclaimed, \"How can you feed them food filled with dangerous chemicals?\" When questioned about the higher costs, Chen responded, \"Dr. Williams, the famous TV personality, swears by organic foods, so they must be healthier.\" She then addressed skeptics in the audience: \"Everyone who truly cares about their family's health buys organic. Either you prioritize your family's wellbeing or you don't - it's that simple.\" The crowd was moved by her emotional appeal about protecting innocent children from harm.",
-            Difficulty = Difficulty.Easy, 
-            TargetFallacyCount = 3 
-        },
-        new GameText 
-        { 
-            Title = "The Social Media Debate",
-            FullText = "At the parent-teacher conference, concerned mother Lisa Thompson spoke against allowing social media in schools. When tech-savvy parent Mike Johnson disagreed, Thompson shot back, \"How can you defend social media when your own teenager was caught cyberbullying last year?\" She continued with passion, \"Just imagine if our precious children become addicted to their phones and lose all ability to communicate face-to-face! We must ban social media completely.\" Thompson concluded her argument by stating, \"All the parents at Roosevelt Elementary agree with me - everyone knows social media is destroying our youth.\"",
-            Difficulty = Difficulty.Easy, 
-            TargetFallacyCount = 3 
-        },
-        new GameText 
-        { 
-            Title = "The Climate Action Proposal",
-            FullText = "City Council member David Park presented his climate action plan at Tuesday's meeting. \"Every responsible city has implemented green policies,\" Park began, \"so we must follow suit to stay relevant.\" When asked for evidence, Park replied, \"I don't need to prove climate change is real - those who deny it need to prove it's not happening.\" He shared a personal story: \"My neighbor switched to solar panels and his electricity bill disappeared completely, proving that renewable energy saves money for everyone.\" Park dismissed critics by saying, \"No true environmentalist would oppose clean energy initiatives.\" He added, \"Since carbon emissions increased after we built the new highway, clearly highways cause climate change.\" The council ultimately decided to find a reasonable middle ground between Park's comprehensive plan and opponents' preference for no action at all.",
-            Difficulty = Difficulty.Medium, 
-            TargetFallacyCount = 6 
-        },
-        new GameText 
-        { 
-            Title = "The Alternative Medicine Debate",
-            FullText = "Dr. Rebecca Santos defended alternative medicine at the medical conference. \"Herbal remedies are completely natural,\" she argued, \"so they're obviously safer than synthetic drugs with artificial chemicals.\" When challenged about scientific evidence, Santos responded, \"Critics can't prove these treatments don't work, which shows their effectiveness.\" She cited personal experience: \"My grandmother used turmeric for arthritis and lived to 95, proving that natural remedies extend lifespan.\" Santos dismissed pharmaceutical researchers, claiming, \"No real healer would prioritize profits over natural healing methods.\" She noted, \"After our clinic started offering acupuncture, patient satisfaction increased, clearly demonstrating that acupuncture improves health outcomes.\" The conference concluded by seeking a compromise between traditional medicine and Santos's holistic approach.",
-            Difficulty = Difficulty.Medium, 
-            TargetFallacyCount = 6 
-        },
-        new GameText 
-        { 
-            Title = "The Urban Development Proposal",
-            FullText = "At the heated city planning meeting, developer Marcus Chen presented his controversial mixed-use project. \"This development is necessary for progress,\" Chen began, \"because progress is essential for our city's growth.\" When residents expressed concerns, Chen challenged them: \"Have you stopped opposing beneficial development in our neighborhood?\" He dismissed environmental worries by stating, \"Since I cannot understand how a small development could possibly impact the entire ecosystem, these environmental claims must be false.\" Chen cited statistical support: \"Three successful developments in the past decade prove this project will succeed,\" carefully omitting five failed projects from the same period. When questioned about funding sources, Chen deflected: \"Critics can't prove my financing is problematic, therefore it must be legitimate.\" He attacked opposition leader Sarah Kim personally: \"Kim's ideas come from San Francisco's planning department, and everyone knows San Francisco policies are fundamentally flawed.\" Chen dismissed expert concerns by labeling them: \"No true urban planner would oppose smart development like this.\" He noted coincidental timing: \"Property values increased after we announced this project, proving community support for development.\" Finally, he demanded compromise: \"The planning commission should find middle ground between my complete vision and opponents' total rejection.\"",
-            Difficulty = Difficulty.Hard, 
-            TargetFallacyCount = 9 
-        }
+    // Add one comprehensive topic that can accommodate all fallacy types
+    var topic = new Topic 
+    { 
+        Name = "Community Policy Debates", 
+        Description = "General community discussions covering education, health, technology, environment, and development policies", 
+        Difficulty = Difficulty.Easy // Will be used for all difficulty levels
     };
 
-    context.GameTexts.AddRange(gameTexts);
+    context.Topics.Add(topic);
     await context.SaveChangesAsync();
 
-    // Add fallacy mappings for game texts
-    var fallacyMappings = new List<GameTextFallacy>();
+    // Create text blocks - 3 examples for each of the 24 fallacies
+    var textBlocks = new List<TextBlock>();
 
-    // Easy Game Text 1 mappings (Ad Hominem, Strawman, False Dilemma)
-    var gameText1 = gameTexts[0];
-    fallacyMappings.AddRange(new[]
+    // EASY FALLACIES (8 fallacies × 3 examples = 24 blocks)
+
+    // Ad Hominem (3 examples)
+    textBlocks.AddRange(new[]
     {
-        new GameTextFallacy { GameTextId = gameText1.Id, FallacyId = fallacies.First(f => f.Key == "ad-hominem").Id },
-        new GameTextFallacy { GameTextId = gameText1.Id, FallacyId = fallacies.First(f => f.Key == "strawman").Id },
-        new GameTextFallacy { GameTextId = gameText1.Id, FallacyId = fallacies.First(f => f.Key == "false-dilemma").Id }
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "ad-hominem").Id, 
+            Content = "We can't trust Sarah Martinez's opinion on this policy because she doesn't even live in our district.", 
+            Context = "Dismissing based on residency", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "ad-hominem").Id, 
+            Content = "How can we take Johnson's budget proposal seriously when he filed for bankruptcy five years ago?", 
+            Context = "Personal financial attack", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "ad-hominem").Id, 
+            Content = "The council member advocating for this change is just a failed lawyer looking for attention.", 
+            Context = "Career-based dismissal", PositionHint = "late" }
     });
 
-    // Easy Game Text 2 mappings (Appeal to Emotion, Appeal to Authority, Bandwagon)
-    var gameText2 = gameTexts[1];
-    fallacyMappings.AddRange(new[]
+    // Strawman (3 examples)
+    textBlocks.AddRange(new[]
     {
-        new GameTextFallacy { GameTextId = gameText2.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-emotion").Id },
-        new GameTextFallacy { GameTextId = gameText2.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-authority").Id },
-        new GameTextFallacy { GameTextId = gameText2.Id, FallacyId = fallacies.First(f => f.Key == "bandwagon").Id }
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "strawman").Id, 
+            Content = "The mayor says we need better infrastructure, but what he really wants is to waste money on gold-plated roads.", 
+            Context = "Exaggerating infrastructure needs", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "strawman").Id, 
+            Content = "Supporters of renewable energy want to shut down all power plants and leave us in the dark.", 
+            Context = "Misrepresenting energy transition", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "strawman").Id, 
+            Content = "Those calling for police reform actually want to eliminate all law enforcement and let criminals run wild.", 
+            Context = "Twisting reform proposals", PositionHint = "late" }
     });
 
-    // Easy Game Text 3 mappings (Tu Quoque, Slippery Slope, Bandwagon)
-    var gameText3 = gameTexts[2];
-    fallacyMappings.AddRange(new[]
+    // Appeal to Authority (3 examples)
+    textBlocks.AddRange(new[]
     {
-        new GameTextFallacy { GameTextId = gameText3.Id, FallacyId = fallacies.First(f => f.Key == "tu-quoque").Id },
-        new GameTextFallacy { GameTextId = gameText3.Id, FallacyId = fallacies.First(f => f.Key == "slippery-slope").Id },
-        new GameTextFallacy { GameTextId = gameText3.Id, FallacyId = fallacies.First(f => f.Key == "bandwagon").Id }
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-authority").Id, 
+            Content = "Celebrity Dr. Williams endorses this health initiative, so it must be the right approach.", 
+            Context = "TV personality medical advice", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-authority").Id, 
+            Content = "The famous economist from TV said this policy would work, and he has millions of followers.", 
+            Context = "Media expert validation", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-authority").Id, 
+            Content = "My dentist says climate change isn't real, and he's a doctor so he must understand science.", 
+            Context = "Wrong domain authority", PositionHint = "late" }
     });
 
-    // Medium Game Text 1 mappings (Bandwagon, Burden of Proof, Anecdotal, No True Scotsman, Post Hoc, Middle Ground)
-    var gameText4 = gameTexts[3];
-    fallacyMappings.AddRange(new[]
+    // False Dilemma (3 examples)
+    textBlocks.AddRange(new[]
     {
-        new GameTextFallacy { GameTextId = gameText4.Id, FallacyId = fallacies.First(f => f.Key == "bandwagon").Id },
-        new GameTextFallacy { GameTextId = gameText4.Id, FallacyId = fallacies.First(f => f.Key == "burden-of-proof").Id },
-        new GameTextFallacy { GameTextId = gameText4.Id, FallacyId = fallacies.First(f => f.Key == "anecdotal").Id },
-        new GameTextFallacy { GameTextId = gameText4.Id, FallacyId = fallacies.First(f => f.Key == "no-true-scotsman").Id },
-        new GameTextFallacy { GameTextId = gameText4.Id, FallacyId = fallacies.First(f => f.Key == "post-hoc").Id },
-        new GameTextFallacy { GameTextId = gameText4.Id, FallacyId = fallacies.First(f => f.Key == "middle-ground").Id }
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "false-dilemma").Id, 
+            Content = "Either we build this highway or our economy will collapse - there are no other options.", 
+            Context = "Infrastructure ultimatum", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "false-dilemma").Id, 
+            Content = "You're either with progress or you're against it - make your choice.", 
+            Context = "Progress binary choice", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "false-dilemma").Id, 
+            Content = "We must choose between safety and freedom - we can't have both.", 
+            Context = "Security vs liberty", PositionHint = "late" }
     });
 
-    // Medium Game Text 2 mappings (Appeal to Nature, Appeal to Ignorance, Anecdotal, No True Scotsman, Post Hoc, Middle Ground)
-    var gameText5 = gameTexts[4];
-    fallacyMappings.AddRange(new[]
+    // Slippery Slope (3 examples)
+    textBlocks.AddRange(new[]
     {
-        new GameTextFallacy { GameTextId = gameText5.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-nature").Id },
-        new GameTextFallacy { GameTextId = gameText5.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-ignorance").Id },
-        new GameTextFallacy { GameTextId = gameText5.Id, FallacyId = fallacies.First(f => f.Key == "anecdotal").Id },
-        new GameTextFallacy { GameTextId = gameText5.Id, FallacyId = fallacies.First(f => f.Key == "no-true-scotsman").Id },
-        new GameTextFallacy { GameTextId = gameText5.Id, FallacyId = fallacies.First(f => f.Key == "post-hoc").Id },
-        new GameTextFallacy { GameTextId = gameText5.Id, FallacyId = fallacies.First(f => f.Key == "middle-ground").Id }
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "slippery-slope").Id, 
+            Content = "If we allow food trucks on Main Street, soon we'll have carnival rides and our downtown will be a circus.", 
+            Context = "Food truck regulation", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "slippery-slope").Id, 
+            Content = "Start with small tax increases and before you know it, the government will take everything we own.", 
+            Context = "Tax policy escalation", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "slippery-slope").Id, 
+            Content = "Allow this minor regulation and soon bureaucrats will control every aspect of our lives.", 
+            Context = "Regulation expansion", PositionHint = "late" }
     });
 
-    // Hard Game Text 1 mappings (All 9 hard-level fallacies)
-    var gameText6 = gameTexts[5];
-    fallacyMappings.AddRange(new[]
+    // Appeal to Emotion (3 examples)
+    textBlocks.AddRange(new[]
     {
-        new GameTextFallacy { GameTextId = gameText6.Id, FallacyId = fallacies.First(f => f.Key == "begging-the-question").Id },
-        new GameTextFallacy { GameTextId = gameText6.Id, FallacyId = fallacies.First(f => f.Key == "loaded-question").Id },
-        new GameTextFallacy { GameTextId = gameText6.Id, FallacyId = fallacies.First(f => f.Key == "personal-incredulity").Id },
-        new GameTextFallacy { GameTextId = gameText6.Id, FallacyId = fallacies.First(f => f.Key == "texas-sharpshooter").Id },
-        new GameTextFallacy { GameTextId = gameText6.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-ignorance").Id },
-        new GameTextFallacy { GameTextId = gameText6.Id, FallacyId = fallacies.First(f => f.Key == "genetic-fallacy").Id },
-        new GameTextFallacy { GameTextId = gameText6.Id, FallacyId = fallacies.First(f => f.Key == "no-true-scotsman").Id },
-        new GameTextFallacy { GameTextId = gameText6.Id, FallacyId = fallacies.First(f => f.Key == "post-hoc").Id },
-        new GameTextFallacy { GameTextId = gameText6.Id, FallacyId = fallacies.First(f => f.Key == "middle-ground").Id }
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-emotion").Id, 
+            Content = "Think of the innocent children who will suffer if we don't pass this measure immediately!", 
+            Context = "Children's safety appeal", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-emotion").Id, 
+            Content = "Our brave veterans didn't fight for freedom just so we could give it away with this policy.", 
+            Context = "Veteran sacrifice appeal", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-emotion").Id, 
+            Content = "Picture your elderly parents struggling to afford medicine - we must act now!", 
+            Context = "Elder care emotional plea", PositionHint = "late" }
     });
 
-    context.GameTextFallacies.AddRange(fallacyMappings);
+    // Bandwagon (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "bandwagon").Id, 
+            Content = "Every other city in the state has adopted this policy - we need to follow suit.", 
+            Context = "Regional trend following", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "bandwagon").Id, 
+            Content = "All the successful communities are doing this, and everyone knows success speaks for itself.", 
+            Context = "Success trend appeal", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "bandwagon").Id, 
+            Content = "The majority of residents support this initiative - the people have spoken.", 
+            Context = "Popular opinion validation", PositionHint = "late" }
+    });
+
+    // Tu Quoque (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "tu-quoque").Id, 
+            Content = "How can you criticize our spending when your own department went over budget last year?", 
+            Context = "Budget criticism deflection", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "tu-quoque").Id, 
+            Content = "You're calling for transparency, but didn't you vote against the open records bill?", 
+            Context = "Transparency hypocrisy", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "tu-quoque").Id, 
+            Content = "Why should we listen to your environmental concerns when you drive a gas-guzzling SUV?", 
+            Context = "Environmental hypocrisy", PositionHint = "late" }
+    });
+
+    // MEDIUM FALLACIES (8 fallacies × 3 examples = 24 blocks)
+
+    // Burden of Proof (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "burden-of-proof").Id, 
+            Content = "I don't need to prove this policy will work - you need to prove it won't.", 
+            Context = "Policy effectiveness challenge", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "burden-of-proof").Id, 
+            Content = "The health benefits are obvious - if you disagree, prove me wrong with your studies.", 
+            Context = "Health claim reversal", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "burden-of-proof").Id, 
+            Content = "This development will create jobs - opponents need to demonstrate it won't.", 
+            Context = "Job creation assumption", PositionHint = "late" }
+    });
+
+    // No True Scotsman (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "no-true-scotsman").Id, 
+            Content = "No true community leader would oppose this beneficial initiative.", 
+            Context = "Leadership purity test", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "no-true-scotsman").Id, 
+            Content = "Any real environmentalist would support this green energy project.", 
+            Context = "Environmental purity appeal", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "no-true-scotsman").Id, 
+            Content = "No genuine fiscal conservative would vote against cutting wasteful programs.", 
+            Context = "Conservative identity test", PositionHint = "late" }
+    });
+
+    // Texas Sharpshooter (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "texas-sharpshooter").Id, 
+            Content = "Crime dropped 15% in these three neighborhoods after we installed cameras - clearly surveillance works.", 
+            Context = "Cherry-picked crime stats", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "texas-sharpshooter").Id, 
+            Content = "Look at these four successful businesses that opened after our tax breaks - the policy is clearly effective.", 
+            Context = "Selective business success", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "texas-sharpshooter").Id, 
+            Content = "Test scores improved at five schools with new programs - this proves our education reform works.", 
+            Context = "Selected education results", PositionHint = "late" }
+    });
+
+    // Appeal to Nature (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-nature").Id, 
+            Content = "This organic approach to waste management is natural, so it must be the healthiest option.", 
+            Context = "Natural waste solution", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-nature").Id, 
+            Content = "Traditional farming methods are natural and have worked for centuries - why change now?", 
+            Context = "Agricultural tradition appeal", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-nature").Id, 
+            Content = "Natural immunity is always better than artificial interventions - it's how humans evolved.", 
+            Context = "Natural health argument", PositionHint = "late" }
+    });
+
+    // Composition/Division (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "composition-division").Id, 
+            Content = "Each department in this agency is efficient, so the entire government must be well-run.", 
+            Context = "Department to government logic", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "composition-division").Id, 
+            Content = "Since every member of the planning committee is qualified, their recommendations must be perfect.", 
+            Context = "Individual to group quality", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "composition-division").Id, 
+            Content = "This university has an excellent reputation, so every professor there must be outstanding.", 
+            Context = "Institution to individual logic", PositionHint = "late" }
+    });
+
+    // Anecdotal (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "anecdotal").Id, 
+            Content = "My neighbor tried this program and saved $500 a month - it clearly works for everyone.", 
+            Context = "Personal savings example", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "anecdotal").Id, 
+            Content = "I know three people who got sick after the water main repair - something's wrong with our water supply.", 
+            Context = "Individual health concerns", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "anecdotal").Id, 
+            Content = "My grandson's school improved dramatically with these changes - this policy works.", 
+            Context = "Single school experience", PositionHint = "late" }
+    });
+
+    // Post Hoc (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "post-hoc").Id, 
+            Content = "Traffic accidents increased after we installed those new streetlights - they're obviously causing crashes.", 
+            Context = "Lighting and accident correlation", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "post-hoc").Id, 
+            Content = "The downtown renovation completed and then several businesses closed - clearly the construction hurt commerce.", 
+            Context = "Renovation and business closure", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "post-hoc").Id, 
+            Content = "Property values rose after the mayor took office - his policies are definitely working.", 
+            Context = "Leadership and market changes", PositionHint = "late" }
+    });
+
+    // Middle Ground (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "middle-ground").Id, 
+            Content = "Some want no restrictions, others want total bans - the reasonable compromise is moderate regulation.", 
+            Context = "Regulation compromise", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "middle-ground").Id, 
+            Content = "The truth about this budget dispute lies somewhere between the opposing viewpoints.", 
+            Context = "Budget disagreement middle", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "middle-ground").Id, 
+            Content = "Both sides have valid points about development - let's find a balanced solution.", 
+            Context = "Development compromise", PositionHint = "late" }
+    });
+
+    // HARD FALLACIES (8 fallacies × 3 examples = 24 blocks)
+
+    // Begging the Question (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "begging-the-question").Id, 
+            Content = "This policy is necessary because we need it to address the problems it's designed to solve.", 
+            Context = "Circular policy justification", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "begging-the-question").Id, 
+            Content = "The budget increase is justified because it provides the funding we need for essential expenses.", 
+            Context = "Circular budget reasoning", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "begging-the-question").Id, 
+            Content = "We know this regulation works because it effectively achieves its intended regulatory goals.", 
+            Context = "Circular regulation logic", PositionHint = "late" }
+    });
+
+    // Special Pleading (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "special-pleading").Id, 
+            Content = "Statistical models usually work, but they can't account for our community's unique circumstances.", 
+            Context = "Statistics exception claim", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "special-pleading").Id, 
+            Content = "Evidence-based policies work elsewhere, but our situation has special factors that make them invalid here.", 
+            Context = "Evidence exception argument", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "special-pleading").Id, 
+            Content = "Economic principles apply generally, except when dealing with our particular local market conditions.", 
+            Context = "Economic exception reasoning", PositionHint = "late" }
+    });
+
+    // Appeal to Ignorance (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-ignorance").Id, 
+            Content = "No one has proven this project will fail, so we should definitely proceed with construction.", 
+            Context = "Project failure absence", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-ignorance").Id, 
+            Content = "There's no evidence these regulations will harm businesses, therefore they must be beneficial.", 
+            Context = "Regulation harm absence", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "appeal-to-ignorance").Id, 
+            Content = "Since critics can't demonstrate negative consequences, this policy is clearly the right choice.", 
+            Context = "Negative consequence absence", PositionHint = "late" }
+    });
+
+    // Loaded Question (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "loaded-question").Id, 
+            Content = "When will the mayor stop ignoring the serious infrastructure problems in our community?", 
+            Context = "Mayor neglect assumption", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "loaded-question").Id, 
+            Content = "How long will the council continue wasting taxpayer money on these failed programs?", 
+            Context = "Council waste presumption", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "loaded-question").Id, 
+            Content = "Why does the planning department keep approving these destructive development projects?", 
+            Context = "Destructive development assumption", PositionHint = "late" }
+    });
+
+    // Ambiguity (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "ambiguity").Id, 
+            Content = "The new park regulations are fine - they're perfectly acceptable and won't cost residents anything.", 
+            Context = "Fine as acceptable/penalty", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "ambiguity").Id, 
+            Content = "The bank will address all community members' concerns about the new branch location.", 
+            Context = "Address as location/solve", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "ambiguity").Id, 
+            Content = "The city's financial position is stable - we have solid ground under our budget foundation.", 
+            Context = "Stable as steady/unchanging", PositionHint = "late" }
+    });
+
+    // Gambler's Fallacy (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "gamblers-fallacy").Id, 
+            Content = "We've had three failed initiatives in a row - statistically, this next one has to succeed.", 
+            Context = "Success probability misconception", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "gamblers-fallacy").Id, 
+            Content = "Property values have declined for four straight years - they're due to increase next year.", 
+            Context = "Market correction expectation", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "gamblers-fallacy").Id, 
+            Content = "Our last five budget votes were close calls - the odds favor an easy decision this time.", 
+            Context = "Vote difficulty prediction", PositionHint = "late" }
+    });
+
+    // Personal Incredulity (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "personal-incredulity").Id, 
+            Content = "I can't understand how this complex economic model could possibly predict local market trends accurately.", 
+            Context = "Economic model complexity", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "personal-incredulity").Id, 
+            Content = "The environmental impact calculations are too complicated for me to follow - they must be wrong.", 
+            Context = "Environmental calculation complexity", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "personal-incredulity").Id, 
+            Content = "I don't see how renewable energy could power our entire grid - the technology seems impossible.", 
+            Context = "Renewable energy skepticism", PositionHint = "late" }
+    });
+
+    // Genetic Fallacy (3 examples)
+    textBlocks.AddRange(new[]
+    {
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "genetic-fallacy").Id, 
+            Content = "This urban planning idea came from a liberal university, so it must be impractical idealism.", 
+            Context = "Liberal origin dismissal", PositionHint = "early" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "genetic-fallacy").Id, 
+            Content = "The efficiency proposal originated from a for-profit consulting firm - it's obviously just about money.", 
+            Context = "Corporate origin suspicion", PositionHint = "middle" },
+        new TextBlock { TopicId = topic.Id, FallacyId = fallacies.First(f => f.Key == "genetic-fallacy").Id, 
+            Content = "Since this policy framework comes from Washington bureaucrats, it can't address local needs.", 
+            Context = "Federal origin rejection", PositionHint = "late" }
+    });
+
+    context.TextBlocks.AddRange(textBlocks);
     await context.SaveChangesAsync();
 }
 

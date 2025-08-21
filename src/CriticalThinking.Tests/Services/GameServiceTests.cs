@@ -11,6 +11,7 @@ namespace CriticalThinking.Tests.Services;
 public class GameServiceTests : IDisposable
 {
     private readonly Mock<IScoringService> _mockScoringService;
+    private readonly Mock<IGameTextGenerationService> _mockGameTextGenerationService;
     private readonly string _databaseName;
 
     public GameServiceTests()
@@ -19,12 +20,13 @@ public class GameServiceTests : IDisposable
         _mockScoringService = new Mock<IScoringService>();
         _mockScoringService.Setup(s => s.CalculateScore(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<Difficulty>()))
                           .Returns(100);
+
     }
 
     private async Task<GameService> CreateGameServiceAsync()
     {
         var context = await TestDbContextFactory.CreateContextWithSampleDataAsync(_databaseName);
-        return new GameService(context, _mockScoringService.Object);
+        return new GameService(context, _mockScoringService.Object, _mockGameTextGenerationService.Object);
     }
 
     [Fact]

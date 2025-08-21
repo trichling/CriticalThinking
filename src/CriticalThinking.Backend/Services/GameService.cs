@@ -16,17 +16,19 @@ public class GameService : IGameService
 {
     private readonly CriticalThinkingContext _context;
     private readonly IScoringService _scoringService;
+    private readonly IGameTextGenerationService _gameTextGenerationService;
 
-    public GameService(CriticalThinkingContext context, IScoringService scoringService)
+    public GameService(CriticalThinkingContext context, IScoringService scoringService, IGameTextGenerationService gameTextGenerationService)
     {
         _context = context;
         _scoringService = scoringService;
+        _gameTextGenerationService = gameTextGenerationService;
     }
 
     public async Task<GameStartResponse> StartGameAsync(GameStartRequest request)
     {
-        // Get a random game text based on difficulty
-        var gameText = await GetRandomGameTextAsync(request.Difficulty);
+        // Generate a dynamic game text based on difficulty
+        var gameText = await _gameTextGenerationService.GenerateGameTextAsync(request.Difficulty);
         if (gameText == null)
         {
             throw new InvalidOperationException($"No game text available for difficulty: {request.Difficulty}");
@@ -166,20 +168,6 @@ public class GameService : IGameService
         }).ToList();
     }
 
-    private async Task<GameText?> GetRandomGameTextAsync(Difficulty difficulty)
-    {
-        var gameTexts = await _context.GameTexts
-            .Include(gt => gt.GameTextFallacies)
-                .ThenInclude(gtf => gtf.Fallacy)
-            .Where(gt => gt.Difficulty == difficulty)
-            .ToListAsync();
-
-        if (!gameTexts.Any())
-            return null;
-
-        var random = new Random();
-        return gameTexts[random.Next(gameTexts.Count)];
-    }
 
     private List<FallacyResult> AnalyzeAnswers(List<int> selectedIds, List<LogicalFallacy> correctFallacies, string gameText)
     {

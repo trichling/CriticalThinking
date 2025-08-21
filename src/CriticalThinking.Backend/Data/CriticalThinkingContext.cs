@@ -10,6 +10,7 @@ public class CriticalThinkingContext : DbContext
     }
 
     public DbSet<LogicalFallacy> LogicalFallacies { get; set; } = null!;
+    public DbSet<Topic> Topics { get; set; } = null!;
     public DbSet<TextBlock> TextBlocks { get; set; } = null!;
     public DbSet<GameText> GameTexts { get; set; } = null!;
     public DbSet<GameTextFallacy> GameTextFallacies { get; set; } = null!;
@@ -59,9 +60,19 @@ public class CriticalThinkingContext : DbContext
 
         // Configure relationships
         modelBuilder.Entity<TextBlock>()
+            .HasOne(tb => tb.Topic)
+            .WithMany(t => t.TextBlocks)
+            .HasForeignKey(tb => tb.TopicId);
+
+        modelBuilder.Entity<TextBlock>()
             .HasOne(tb => tb.Fallacy)
             .WithMany(lf => lf.TextBlocks)
             .HasForeignKey(tb => tb.FallacyId);
+
+        modelBuilder.Entity<GameText>()
+            .HasOne(gt => gt.Topic)
+            .WithMany(t => t.GameTexts)
+            .HasForeignKey(gt => gt.TopicId);
 
         modelBuilder.Entity<GameTextFallacy>()
             .HasOne(gtf => gtf.GameText)
@@ -99,6 +110,7 @@ public class CriticalThinkingContext : DbContext
 
         // Configure table names to match PostgreSQL conventions
         modelBuilder.Entity<LogicalFallacy>().ToTable("logical_fallacies");
+        modelBuilder.Entity<Topic>().ToTable("topics");
         modelBuilder.Entity<TextBlock>().ToTable("text_blocks");
         modelBuilder.Entity<GameText>().ToTable("game_texts");
         modelBuilder.Entity<GameTextFallacy>().ToTable("game_text_fallacies");
@@ -113,13 +125,20 @@ public class CriticalThinkingContext : DbContext
         modelBuilder.Entity<LogicalFallacy>().Property(e => e.Difficulty).HasColumnName("difficulty");
         modelBuilder.Entity<LogicalFallacy>().Property(e => e.Example).HasColumnName("example");
 
+        modelBuilder.Entity<Topic>().Property(e => e.Id).HasColumnName("id");
+        modelBuilder.Entity<Topic>().Property(e => e.Name).HasColumnName("name");
+        modelBuilder.Entity<Topic>().Property(e => e.Description).HasColumnName("description");
+        modelBuilder.Entity<Topic>().Property(e => e.Difficulty).HasColumnName("difficulty");
+
         modelBuilder.Entity<TextBlock>().Property(e => e.Id).HasColumnName("id");
+        modelBuilder.Entity<TextBlock>().Property(e => e.TopicId).HasColumnName("topic_id");
         modelBuilder.Entity<TextBlock>().Property(e => e.FallacyId).HasColumnName("fallacy_id");
         modelBuilder.Entity<TextBlock>().Property(e => e.Content).HasColumnName("content");
         modelBuilder.Entity<TextBlock>().Property(e => e.Context).HasColumnName("context");
         modelBuilder.Entity<TextBlock>().Property(e => e.PositionHint).HasColumnName("position_hint");
 
         modelBuilder.Entity<GameText>().Property(e => e.Id).HasColumnName("id");
+        modelBuilder.Entity<GameText>().Property(e => e.TopicId).HasColumnName("topic_id");
         modelBuilder.Entity<GameText>().Property(e => e.Title).HasColumnName("title");
         modelBuilder.Entity<GameText>().Property(e => e.FullText).HasColumnName("full_text");
         modelBuilder.Entity<GameText>().Property(e => e.Difficulty).HasColumnName("difficulty");
