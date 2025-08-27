@@ -1,15 +1,15 @@
 <template>
   <div class="game-page">
     <div v-if="!gameStore.isGameActive" class="loading">
-      <p>Loading game...</p>
+      <p>{{ $t('game.loading') }}</p>
     </div>
 
     <div v-else class="game-container">
       <div class="game-header">
-        <h2>Find the Logical Fallacies</h2>
+        <h2>{{ $t('game.title') }}</h2>
         <div class="game-info">
-          <span class="player-name">Player: {{ gameStore.playerName }}</span>
-          <span class="timer">Time: {{ formatTime(elapsedTime) }}</span>
+          <span class="player-name">{{ $t('game.player') }} {{ gameStore.playerName }}</span>
+          <span class="timer">{{ $t('game.time') }} {{ formatTime(elapsedTime) }}</span>
         </div>
       </div>
 
@@ -19,7 +19,7 @@
           <!-- Text Section -->
           <div class="text-section">
             <div class="text-container">
-              <h3>Read the text and identify the logical fallacies:</h3>
+              <h3>{{ $t('game.instruction') }}</h3>
               <div class="game-text">
                 {{ gameStore.gameText }}
               </div>
@@ -29,7 +29,7 @@
           <!-- Fallacies Sidebar -->
           <div class="fallacies-sidebar">
             <div class="fallacies-container">
-              <h3>Select fallacies ({{ gameStore.selectedFallacies.length }} selected):</h3>
+              <h3>{{ $t('game.selectFallacies', { count: gameStore.selectedFallacies.length }) }}</h3>
               <div class="fallacies-list">
                 <div
                   v-for="fallacy in gameStore.availableFallacies"
@@ -51,14 +51,15 @@
           </div>
         </div>
 
-        <div class="game-actions">
+        <!-- Submit Button -->
+        <div class="submit-section">
           <button 
             @click="submitAnswer" 
-            :disabled="gameStore.isLoading || gameStore.selectedFallacies.length === 0"
+            :disabled="gameStore.isLoading" 
             class="submit-button"
           >
-            <span v-if="gameStore.isLoading">Submitting...</span>
-            <span v-else>Submit Answer ({{ gameStore.selectedFallacies.length }} fallacies)</span>
+            <span v-if="gameStore.isLoading">{{ $t('buttons.submitting') }}</span>
+            <span v-else>{{ $t('buttons.submitAnswer') }} ({{ gameStore.selectedFallacies.length }})</span>
           </button>
         </div>
       </div>
@@ -74,7 +75,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores/game'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const gameStore = useGameStore()
 

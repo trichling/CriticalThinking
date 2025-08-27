@@ -1,28 +1,28 @@
 <template>
   <div class="start-page">
     <div class="card">
-      <h2>Welcome to the Critical Thinking Game!</h2>
+      <h2>{{ $t('welcome.title') }}</h2>
       <p class="description">
-        Test your ability to identify logical fallacies in argumentative texts. 
-        Choose your difficulty level and start training your critical thinking skills.
+        {{ $t('welcome.description') }}
+        {{ $t('welcome.chooseLevel') }}
       </p>
 
       <form @submit.prevent="handleStartGame" class="start-form">
         <div class="form-group">
-          <label for="playerName">Your Name:</label>
+          <label for="playerName">{{ $t('form.playerName') }}</label>
           <input
             id="playerName"
             v-model="playerName"
             type="text"
             required
             maxlength="100"
-            placeholder="Enter your name"
+            :placeholder="$t('form.placeholder')"
             class="form-input"
           />
         </div>
 
         <div class="form-group">
-          <label>Difficulty Level:</label>
+          <label>{{ $t('form.difficultyLevel') }}</label>
           <div class="difficulty-options">
             <label class="difficulty-option">
               <input
@@ -32,8 +32,8 @@
                 name="difficulty"
               />
               <span class="difficulty-label">
-                <strong>Easy</strong>
-                <small>3 fallacies from basic set</small>
+                <strong>{{ $t('difficulty.easy') }}</strong>
+                <small>{{ $t('difficulty.easyDescription') }}</small>
               </span>
             </label>
 
@@ -45,8 +45,8 @@
                 name="difficulty"
               />
               <span class="difficulty-label">
-                <strong>Medium</strong>
-                <small>6 fallacies from easy & medium sets</small>
+                <strong>{{ $t('difficulty.medium') }}</strong>
+                <small>{{ $t('difficulty.mediumDescription') }}</small>
               </span>
             </label>
 
@@ -58,16 +58,16 @@
                 name="difficulty"
               />
               <span class="difficulty-label">
-                <strong>Hard</strong>
-                <small>9 fallacies from all sets</small>
+                <strong>{{ $t('difficulty.hard') }}</strong>
+                <small>{{ $t('difficulty.hardDescription') }}</small>
               </span>
             </label>
           </div>
         </div>
 
         <button type="submit" :disabled="isLoading" class="start-button">
-          <span v-if="isLoading">Starting Game...</span>
-          <span v-else>Start Game</span>
+          <span v-if="isLoading">{{ $t('buttons.startingGame') }}</span>
+          <span v-else>{{ $t('buttons.startGame') }}</span>
         </button>
       </form>
 
@@ -83,7 +83,9 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores/game'
 import { Difficulty } from '@/services/api'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const gameStore = useGameStore()
 

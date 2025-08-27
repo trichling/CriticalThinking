@@ -1,36 +1,48 @@
 <template>
   <div class="results-page">
-    <div v-if="!gameStore.gameResult" class="loading">
-      <p>Loading results...</p>
+    <div v-if="!gameStore.gameResult" class="loading"><script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useGameStore } from '@/stores/game'
+import { FallacyResultType } from '@/services/api'
+import HighlightedText from '@/components/HighlightedText.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+const router = useRouter()
+const gameStore = useGameStore()
+
+// Reactive state for hover highlighting
+const hoveredFallacyId = ref<number | null = null $t('results.loading') }}</p>
     </div>
 
     <div v-else class="results-container">
       <!-- Game Results Header -->
       <div class="results-header">
-        <h2>Game Results</h2>
+        <h2>{{ $t('results.title') }}</h2>
         <div class="score-display">
           <div class="score-circle">
             <span class="score-value">{{ gameStore.gameResult.score }}</span>
-            <span class="score-label">points</span>
+            <span class="score-label">{{ $t('results.points') }}</span>
           </div>
         </div>
       </div>
 
       <div class="summary-stats">
         <div class="stat-card">
-          <h3>Time Taken</h3>
+          <h3>{{ $t('results.timeTaken') }}</h3>
           <p class="stat-value">{{ formatTime(gameStore.gameResult.timeTakenSeconds) }}</p>
         </div>
         <div class="stat-card">
-          <h3>Correct</h3>
+          <h3>{{ $t('results.correct') }}</h3>
           <p class="stat-value correct">{{ correctCount }}</p>
         </div>
         <div class="stat-card">
-          <h3>Missed</h3>
+          <h3>{{ $t('results.missed') }}</h3>
           <p class="stat-value missed">{{ missedCount }}</p>
         </div>
         <div class="stat-card">
-          <h3>Incorrect</h3>
+          <h3>{{ $t('results.incorrect') }}</h3>
           <p class="stat-value incorrect">{{ incorrectCount }}</p>
         </div>
       </div>
@@ -40,7 +52,7 @@
         <!-- Text Analysis Section -->
         <div class="text-section">
           <div class="game-text-review" v-if="gameStore.currentGame">
-            <h3>Text Analysis</h3>
+            <h3>{{ $t('results.summary') }}</h3>
             <div class="text-with-highlights">
               <div class="review-text">
                 <HighlightedText 
@@ -56,7 +68,7 @@
         <!-- Fallacy Results Sidebar -->
         <div class="fallacy-sidebar">
           <div class="results-details">
-            <h3>Detailed Results</h3>
+            <h3>{{ $t('results.detailedResults') }}</h3>
             <div class="fallacy-results">
               <div
                 v-for="result in gameStore.gameResult.results"
@@ -82,10 +94,10 @@
 
       <div class="action-buttons">
         <button @click="playAgain" class="play-again-button">
-          Play Again
+          {{ $t('buttons.playAgain') }}
         </button>
         <button @click="goHome" class="home-button">
-          Back to Home
+          {{ $t('buttons.backToStart') }}
         </button>
       </div>
     </div>
@@ -98,7 +110,9 @@ import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores/game'
 import { FallacyResultType } from '@/services/api'
 import HighlightedText from '@/components/HighlightedText.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const gameStore = useGameStore()
 
