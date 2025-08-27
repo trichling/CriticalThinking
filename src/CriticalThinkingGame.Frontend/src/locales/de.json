@@ -1,61 +1,61 @@
 {
-  "app": {
-    "title": "Critical Thinking Spiel",
-    "subtitle": "Trainiere dein logisches Denken durch das Identifizieren von Fehlschlüssen"
-  },
-  "welcome": {
-    "title": "Willkommen zum Critical Thinking Spiel!",
-    "description": "Teste deine Fähigkeit, logische Fehlschlüsse in argumentativen Texten zu identifizieren.",
-    "chooseLevel": "Wähle deinen Schwierigkeitsgrad und beginne dein kritisches Denken zu trainieren."
-  },
-  "form": {
-    "playerName": "Dein Name:",
-    "difficultyLevel": "Schwierigkeitsgrad:",
-    "placeholder": "Gib deinen Namen ein"
-  },
-  "difficulty": {
-    "easy": "Einfach",
-    "medium": "Mittel",
-    "hard": "Schwer",
-    "easyDescription": "3 Fehlschlüsse aus dem Basis-Set",
-    "mediumDescription": "6 Fehlschlüsse aus einfachen & mittleren Sets",
-    "hardDescription": "9 Fehlschlüsse aus allen Sets"
-  },
-  "buttons": {
-    "startGame": "Spiel starten",
-    "startingGame": "Spiel wird gestartet...",
-    "submitAnswer": "Antwort absenden",
-    "submitting": "Wird abgesendet...",
-    "playAgain": "Nochmal spielen",
-    "backToStart": "Zurück zum Start"
-  },
-  "game": {
-    "title": "Finde die logischen Fehlschlüsse",
-    "player": "Spieler:",
-    "time": "Zeit:",
-    "instruction": "Lies den Text und identifiziere die logischen Fehlschlüsse:",
-    "selectFallacies": "Fehlschlüsse auswählen ({count} ausgewählt):",
-    "loading": "Spiel wird geladen..."
-  },
-  "results": {
-    "title": "Spielergebnisse",
-    "points": "Punkte",
-    "timeTaken": "Benötigte Zeit",
-    "correct": "Richtig",
-    "missed": "Verpasst",
-    "incorrect": "Falsch",
-    "loading": "Ergebnisse werden geladen...",
-    "summary": "Zusammenfassung",
-    "detailedResults": "Detaillierte Ergebnisse",
-    "correctlyIdentified": "Korrekt identifizierte Fehlschlüsse",
-    "missedFallacies": "Verpasste Fehlschlüsse",
-    "incorrectlySelected": "Fälschlicherweise ausgewählte Fehlschlüsse",
-    "noCorrectFallacies": "Keine korrekt identifizierten Fehlschlüsse",
-    "noMissedFallacies": "Keine verpassten Fehlschlüsse - gut gemacht!",
-    "noIncorrectFallacies": "Keine fälschlicherweise ausgewählten Fehlschlüsse - ausgezeichnet!"
-  },
-  "errors": {
-    "generic": "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
-    "loading": "Fehler beim Laden der Daten. Bitte lade die Seite neu."
-  }
+    "app": {
+        "title": "Critical Thinking Spiel",
+        "subtitle": "Trainiere dein logisches Denken durch das Identifizieren von Fehlschlüssen"
+    },
+    "welcome": {
+        "title": "Willkommen zum Critical Thinking Spiel!",
+        "description": "Teste deine Fähigkeit, logische Fehlschlüsse in argumentativen Texten zu identifizieren.",
+        "chooseLevel": "Wähle deinen Schwierigkeitsgrad und beginne dein kritisches Denken zu trainieren."
+    },
+    "form": {
+        "playerName": "Dein Name:",
+        "difficultyLevel": "Schwierigkeitsgrad:",
+        "placeholder": "Gib deinen Namen ein"
+    },
+    "difficulty": {
+        "easy": "Einfach",
+        "medium": "Mittel",
+        "hard": "Schwer",
+        "easyDescription": "3 Fehlschlüsse aus dem Basis-Set",
+        "mediumDescription": "6 Fehlschlüsse aus einfachen & mittleren Sets",
+        "hardDescription": "9 Fehlschlüsse aus allen Sets"
+    },
+    "buttons": {
+        "startGame": "Spiel starten",
+        "startingGame": "Spiel wird gestartet...",
+        "submitAnswer": "Antwort absenden",
+        "submitting": "Wird abgesendet...",
+        "playAgain": "Nochmal spielen",
+        "backToStart": "Zurück zum Start"
+    },
+    "game": {
+        "title": "Finde die logischen Fehlschlüsse",
+        "player": "Spieler:",
+        "time": "Zeit:",
+        "instruction": "Lies den Text und identifiziere die logischen Fehlschlüsse:",
+        "selectFallacies": "Fehlschlüsse auswählen ({count} ausgewählt):",
+        "loading": "Spiel wird geladen..."
+    },
+    "results": {
+        "title": "Spielergebnisse",
+        "points": "Punkte",
+        "timeTaken": "Benötigte Zeit",
+        "correct": "Richtig",
+        "missed": "Verpasst",
+        "incorrect": "Falsch",
+        "loading": "Ergebnisse werden geladen...",
+        "summary": "Zusammenfassung",
+        "detailedResults": "Detaillierte Ergebnisse",
+        "correctlyIdentified": "Korrekt identifizierte Fehlschlüsse",
+        "missedFallacies": "Verpasste Fehlschlüsse",
+        "incorrectlySelected": "Fälschlicherweise ausgewählte Fehlschlüsse",
+        "noCorrectFallacies": "Keine korrekt identifizierten Fehlschlüsse",
+        "noMissedFallacies": "Keine verpassten Fehlschlüsse - gut gemacht!",
+        "noIncorrectFallacies": "Keine fälschlicherweise ausgewählten Fehlschlüsse - ausgezeichnet!"
+    },
+    "errors": {
+        "generic": "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
+        "loading": "Fehler beim Laden der Daten. Bitte lade die Seite neu."
+    }
 }

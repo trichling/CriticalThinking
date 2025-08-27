@@ -1,61 +1,61 @@
 {
-  "app": {
-    "title": "Critical Thinking Game",
-    "subtitle": "Train your logical reasoning by identifying fallacies"
-  },
-  "welcome": {
-    "title": "Welcome to the Critical Thinking Game!",
-    "description": "Test your ability to identify logical fallacies in argumentative texts.",
-    "chooseLevel": "Choose your difficulty level and start training your critical thinking skills."
-  },
-  "form": {
-    "playerName": "Your Name:",
-    "difficultyLevel": "Difficulty Level:",
-    "placeholder": "Enter your name"
-  },
-  "difficulty": {
-    "easy": "Easy",
-    "medium": "Medium",
-    "hard": "Hard",
-    "easyDescription": "3 fallacies from basic set",
-    "mediumDescription": "6 fallacies from easy & medium sets",
-    "hardDescription": "9 fallacies from all sets"
-  },
-  "buttons": {
-    "startGame": "Start Game",
-    "startingGame": "Starting Game...",
-    "submitAnswer": "Submit Answer",
-    "submitting": "Submitting...",
-    "playAgain": "Play Again",
-    "backToStart": "Back to Start"
-  },
-  "game": {
-    "title": "Find the Logical Fallacies",
-    "player": "Player:",
-    "time": "Time:",
-    "instruction": "Read the text and identify the logical fallacies:",
-    "selectFallacies": "Select fallacies ({count} selected):",
-    "loading": "Loading game..."
-  },
-  "results": {
-    "title": "Game Results",
-    "points": "points",
-    "timeTaken": "Time Taken",
-    "correct": "Correct",
-    "missed": "Missed",
-    "incorrect": "Incorrect",
-    "loading": "Loading results...",
-    "summary": "Summary",
-    "detailedResults": "Detailed Results",
-    "correctlyIdentified": "Correctly Identified Fallacies",
-    "missedFallacies": "Missed Fallacies",
-    "incorrectlySelected": "Incorrectly Selected Fallacies",
-    "noCorrectFallacies": "No correctly identified fallacies",
-    "noMissedFallacies": "No missed fallacies - well done!",
-    "noIncorrectFallacies": "No incorrectly selected fallacies - excellent!"
-  },
-  "errors": {
-    "generic": "An error occurred. Please try again.",
-    "loading": "Failed to load data. Please refresh the page."
-  }
+    "app": {
+        "title": "Critical Thinking Game",
+        "subtitle": "Train your logical reasoning by identifying fallacies"
+    },
+    "welcome": {
+        "title": "Welcome to the Critical Thinking Game!",
+        "description": "Test your ability to identify logical fallacies in argumentative texts.",
+        "chooseLevel": "Choose your difficulty level and start training your critical thinking skills."
+    },
+    "form": {
+        "playerName": "Your Name:",
+        "difficultyLevel": "Difficulty Level:",
+        "placeholder": "Enter your name"
+    },
+    "difficulty": {
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard",
+        "easyDescription": "3 fallacies from basic set",
+        "mediumDescription": "6 fallacies from easy & medium sets",
+        "hardDescription": "9 fallacies from all sets"
+    },
+    "buttons": {
+        "startGame": "Start Game",
+        "startingGame": "Starting Game...",
+        "submitAnswer": "Submit Answer",
+        "submitting": "Submitting...",
+        "playAgain": "Play Again",
+        "backToStart": "Back to Start"
+    },
+    "game": {
+        "title": "Find the Logical Fallacies",
+        "player": "Player:",
+        "time": "Time:",
+        "instruction": "Read the text and identify the logical fallacies:",
+        "selectFallacies": "Select fallacies ({count} selected):",
+        "loading": "Loading game..."
+    },
+    "results": {
+        "title": "Game Results",
+        "points": "points",
+        "timeTaken": "Time Taken",
+        "correct": "Correct",
+        "missed": "Missed",
+        "incorrect": "Incorrect",
+        "loading": "Loading results...",
+        "summary": "Summary",
+        "detailedResults": "Detailed Results",
+        "correctlyIdentified": "Correctly Identified Fallacies",
+        "missedFallacies": "Missed Fallacies",
+        "incorrectlySelected": "Incorrectly Selected Fallacies",
+        "noCorrectFallacies": "No correctly identified fallacies",
+        "noMissedFallacies": "No missed fallacies - well done!",
+        "noIncorrectFallacies": "No incorrectly selected fallacies - excellent!"
+    },
+    "errors": {
+        "generic": "An error occurred. Please try again.",
+        "loading": "Failed to load data. Please refresh the page."
+    }
 }

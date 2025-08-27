@@ -12,9 +12,13 @@ public class GameText
     [Required]
     public Difficulty Difficulty { get; set; }
 
+    [Required]
+    public int LanguageId { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
+    public Language Language { get; set; } = null!;
     public ICollection<TextFallacy> TextFallacies { get; set; } = new List<TextFallacy>();
     public ICollection<GameSession> GameSessions { get; set; } = new List<GameSession>();
 }

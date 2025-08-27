@@ -31,6 +31,7 @@ public class StartGameRequest
 {
     public string PlayerName { get; set; } = string.Empty;
     public Difficulty Difficulty { get; set; }
+    public string LanguageCode { get; set; } = "en"; // Default to English
 }
 
 public class StartGameResponse
@@ -44,6 +45,7 @@ public class SubmitAnswerRequest
 {
     public int SessionId { get; set; }
     public List<int> SelectedFallacyIds { get; set; } = new();
+    public string LanguageCode { get; set; } = "en"; // Default to English
 }
 
 public class SubmitAnswerResponse

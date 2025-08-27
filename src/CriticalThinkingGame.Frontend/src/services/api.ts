@@ -24,6 +24,7 @@ export interface TextFallacy {
 export interface StartGameRequest {
   playerName: string
   difficulty: Difficulty
+  languageCode: string
 }
 
 export interface StartGameResponse {
@@ -35,6 +36,7 @@ export interface StartGameResponse {
 export interface SubmitAnswerRequest {
   sessionId: number
   selectedFallacyIds: number[]
+  languageCode: string
 }
 
 export interface SubmitAnswerResponse {

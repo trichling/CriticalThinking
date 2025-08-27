@@ -16,17 +16,23 @@ public class GameService : IGameService
 
     public async Task<StartGameResponse> StartGameAsync(StartGameRequest request)
     {
-        // Get random text for the specified difficulty
+        // Get the language
+        var language = await _context.Languages
+            .FirstOrDefaultAsync(l => l.Code == request.LanguageCode)
+            ?? await _context.Languages.FirstAsync(l => l.IsDefault);
+
+        // Get random text for the specified difficulty and language
         var gameText = await _context.GameTexts
             .Include(gt => gt.TextFallacies)
             .ThenInclude(tf => tf.LogicalFallacy)
-            .Where(gt => gt.Difficulty == request.Difficulty)
+            .Include(gt => gt.Language)
+            .Where(gt => gt.Difficulty == request.Difficulty && gt.LanguageId == language.Id)
             .OrderBy(x => Guid.NewGuid())
             .FirstOrDefaultAsync();
 
         if (gameText == null)
         {
-            throw new InvalidOperationException($"No game text found for difficulty {request.Difficulty}");
+            throw new InvalidOperationException($"No game text found for difficulty {request.Difficulty} and language {request.LanguageCode}");
         }
 
         // Create new game session
@@ -44,7 +50,7 @@ public class GameService : IGameService
         await _context.SaveChangesAsync();
 
         // Get all available fallacies based on difficulty
-        var availableFallacies = await GetAvailableFallaciesForDifficulty(request.Difficulty);
+        var availableFallacies = await GetAvailableFallaciesForDifficulty(request.Difficulty, language.Id);
 
         var response = new StartGameResponse
         {
@@ -71,14 +77,19 @@ public class GameService : IGameService
 
     public async Task<SubmitAnswerResponse> SubmitAnswerAsync(SubmitAnswerRequest request)
     {
-        var gameSession = await GetGameSessionAsync(request.SessionId);
+        // Get the language
+        var language = await _context.Languages
+            .FirstOrDefaultAsync(l => l.Code == request.LanguageCode)
+            ?? await _context.Languages.FirstAsync(l => l.IsDefault);
+
+        var gameSession = await GetGameSessionAsync(request.SessionId, language.Id);
         ValidateGameSession(gameSession);
 
         var timeTaken = (int)(DateTime.UtcNow - gameSession.StartTime).TotalSeconds;
         var correctFallacies = gameSession.GameText.TextFallacies.ToList();
         var correctFallacyIds = correctFallacies.Select(tf => tf.LogicalFallacyId).ToHashSet();
 
-        var results = await AnalyzeAnswersAsync(request.SelectedFallacyIds, correctFallacies, correctFallacyIds);
+        var results = await AnalyzeAnswersAsync(request.SelectedFallacyIds, correctFallacies, correctFallacyIds, language.Id);
         var score = CalculateScore(results, timeTaken);
 
         await CompleteGameSessionAsync(gameSession, score, request.SelectedFallacyIds, correctFallacies);
@@ -91,7 +102,7 @@ public class GameService : IGameService
         };
     }
 
-    private async Task<GameSession> GetGameSessionAsync(int sessionId)
+    private async Task<GameSession> GetGameSessionAsync(int sessionId, int? languageId = null)
     {
         var gameSession = await _context.GameSessions
             .Include(gs => gs.GameText)
@@ -118,7 +129,8 @@ public class GameService : IGameService
     private async Task<List<FallacyResult>> AnalyzeAnswersAsync(
         List<int> selectedFallacyIds,
         List<TextFallacy> correctFallacies,
-        HashSet<int> correctFallacyIds)
+        HashSet<int> correctFallacyIds,
+        int languageId)
     {
         var results = new List<FallacyResult>();
 
@@ -129,10 +141,14 @@ public class GameService : IGameService
                 ? FallacyResultType.Correct
                 : FallacyResultType.Missed;
 
+            // Get the translated name
+            var translation = await _context.LogicalFallacyTranslations
+                .FirstOrDefaultAsync(t => t.LogicalFallacyId == textFallacy.LogicalFallacyId && t.LanguageId == languageId);
+
             results.Add(new FallacyResult
             {
                 FallacyId = textFallacy.LogicalFallacyId,
-                FallacyName = textFallacy.LogicalFallacy.Name,
+                FallacyName = translation?.Name ?? textFallacy.LogicalFallacy.Name,
                 StartIndex = textFallacy.StartIndex,
                 EndIndex = textFallacy.EndIndex,
                 ResultType = resultType
@@ -143,13 +159,16 @@ public class GameService : IGameService
         var incorrectSelections = selectedFallacyIds.Where(id => !correctFallacyIds.Contains(id));
         foreach (var selectedFallacyId in incorrectSelections)
         {
-            var fallacy = await _context.LogicalFallacies.FindAsync(selectedFallacyId);
+            var fallacy = await _context.LogicalFallacies
+                .Include(f => f.Translations.Where(t => t.LanguageId == languageId))
+                .FirstOrDefaultAsync(f => f.Id == selectedFallacyId);
+
             if (fallacy != null)
             {
                 results.Add(new FallacyResult
                 {
                     FallacyId = selectedFallacyId,
-                    FallacyName = fallacy.Name,
+                    FallacyName = fallacy.Translations.FirstOrDefault()?.Name ?? fallacy.Name,
                     StartIndex = 0,
                     EndIndex = 0,
                     ResultType = FallacyResultType.Incorrect
@@ -227,9 +246,11 @@ public class GameService : IGameService
         }).ToList();
     }
 
-    private async Task<List<LogicalFallacyDto>> GetAvailableFallaciesForDifficulty(Difficulty difficulty)
+    private async Task<List<LogicalFallacyDto>> GetAvailableFallaciesForDifficulty(Difficulty difficulty, int languageId)
     {
-        var query = _context.LogicalFallacies.AsQueryable();
+        var query = _context.LogicalFallacies
+            .Include(f => f.Translations.Where(t => t.LanguageId == languageId))
+            .AsQueryable();
 
         switch (difficulty)
         {
@@ -248,8 +269,8 @@ public class GameService : IGameService
         return fallacies.Select(f => new LogicalFallacyDto
         {
             Id = f.Id,
-            Name = f.Name,
-            Description = f.Description,
+            Name = f.Translations.FirstOrDefault()?.Name ?? f.Name,
+            Description = f.Translations.FirstOrDefault()?.Description ?? f.Description,
             Difficulty = f.Difficulty
         }).ToList();
     }

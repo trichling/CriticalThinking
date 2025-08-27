@@ -5,6 +5,7 @@ import type {
   SubmitAnswerResponse
 } from '@/services/api'
 import { apiService, Difficulty } from '@/services/api'
+import { getCurrentLanguage } from '@/locales'
 
 export const useGameStore = defineStore('game', () => {
   // State
@@ -30,7 +31,8 @@ export const useGameStore = defineStore('game', () => {
       playerName.value = name
       currentGame.value = await apiService.startGame({
         playerName: name,
-        difficulty
+        difficulty,
+        languageCode: getCurrentLanguage()
       })
       selectedFallacies.value = []
       gameResult.value = null
@@ -51,7 +53,8 @@ export const useGameStore = defineStore('game', () => {
     try {
       gameResult.value = await apiService.submitAnswer({
         sessionId: currentGame.value.sessionId,
-        selectedFallacyIds: selectedFallacies.value
+        selectedFallacyIds: selectedFallacies.value,
+        languageCode: getCurrentLanguage()
       })
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to submit answer'

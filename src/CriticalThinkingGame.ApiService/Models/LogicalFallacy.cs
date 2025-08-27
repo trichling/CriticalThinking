@@ -19,6 +19,7 @@ public class LogicalFallacy
 
     // Navigation properties
     public ICollection<TextFallacy> TextFallacies { get; set; } = new List<TextFallacy>();
+    public ICollection<LogicalFallacyTranslation> Translations { get; set; } = new List<LogicalFallacyTranslation>();
 }
 
 public enum Difficulty

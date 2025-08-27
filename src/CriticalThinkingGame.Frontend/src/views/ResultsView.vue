@@ -1,19 +1,7 @@
 <template>
   <div class="results-page">
-    <div v-if="!gameStore.gameResult" class="loading"><script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useGameStore } from '@/stores/game'
-import { FallacyResultType } from '@/services/api'
-import HighlightedText from '@/components/HighlightedText.vue'
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n()
-const router = useRouter()
-const gameStore = useGameStore()
-
-// Reactive state for hover highlighting
-const hoveredFallacyId = ref<number | null = null $t('results.loading') }}</p>
+    <div v-if="!gameStore.gameResult" class="loading">
+      <p>{{ $t('results.loading') }}</p>
     </div>
 
     <div v-else class="results-container">
@@ -118,6 +106,7 @@ const gameStore = useGameStore()
 
 // Reactive state for hover highlighting
 const hoveredFallacyId = ref<number | null>(null)
+
 
 // Computed properties
 const correctCount = computed(() => 
